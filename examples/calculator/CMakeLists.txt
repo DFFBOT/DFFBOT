@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.10)
+project(Calculator)
+set(CMAKE_BUILD_TYPE "Debug")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -gdwarf-4")
+add_executable(Calculator calculator.c)
