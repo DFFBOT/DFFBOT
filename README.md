@@ -22,7 +22,7 @@ Build and execute the Docker file `Dockerfile_DFFBOT` on https://github.com/DFFB
 ### Manual
 
 To build the fuzzer for binary targets, LLVM is required.
-It is currently tested with LLVM 11.0 on Debian bullseye.
+It is currently tested with LLVM 11.0 on Debian Bullseye.
 
 ```
 # Install the packages
@@ -70,6 +70,85 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+## Usage
+
+This repository contains 4 commands to work with distance files.
+`convert-aflgo-to-dffbot` and `convert-dffbot-to-aflgo` converts
+the distance files to the other type. `generate-distances`
+generates the distance file with the supplied memory addresses
+that are used as targets. `generate-distances-from-debug`
+generates the distance file with the supplied targets file,
+which uses the same format as AFLGo. This command requires that
+the binary was compiled with the debug flag and contains DWARF
+headers (`-gdwarf`). (DWARF Version >= 4 is required). Without
+it, the script can not find the memory location of a given target.
+
+### convert-aflgo-to-dffbot
+
+Arguments:
+- binary_file: Path to the binary (requires debug and dwarf)
+- targets: Path to the `distances.cfg.txt` file
+- output: Path to store the converted distance file
+
+
+Options:
+- `-b <OFFSET>` or `--base-addr <OFFSET>`: Set a custom base_addr for the binary
+
+
+Converts the AFLGo distance to the DFFBOT distance.
+The `-b` flag might be used on smaller binaries because angr struggles sometimes
+with the correct parsing of the base address. The base address can be read by using `readelf -e <Binary> to verify.
+
+
+### convert-dffbot-to-aflgo
+
+Arguments:
+- binary_file: Path to the binary (requires debug and dwarf)
+- targets: Path to the `dffbot_distance.txt` file
+- output: Path to store the converted distance file
+
+
+Options:
+- `-b <OFFSET>` or `--base-addr <OFFSET>`: Set a custom base_addr for the binary
+
+
+Converts the DFFBOT distance to the AFLGo distance.
+The `-b` flag might be used on smaller binaries because angr struggles sometimes
+with the correct parsing of the base address. The base address can be read by using `readelf -e <Binary> to verify.
+
+
+### generate-distances
+
+Arguments:
+- binary_file: Path to the binary
+- output: Path to store the converted distance file
+- targets: A variable list of targets as integers, e.g. `0x10 0xAFFF`, `0x40040`, ...
+
+Options:
+- `-b <OFFSET>` or `--base-addr <OFFSET>`: Set a custom base_addr for the binary
+- `--aflgo-distances`: Use the AFLGo formula to generate the distances (Currently broken ...)
+
+This command generates the distances for the QEMU fuzzing part (DFFBOT-QEMU).
+The AFLGO-Distance formula is currently broken and will be fixed in a later version.
+
+
+### generate-distances-from-debug
+
+Arguments:
+- binary_file: Path to the binary (requires debug and dwarf)
+- targets: Path to the `BBtargets.txt` file for the target selection
+- output: Path to store the converted distance file
+
+Options:
+- `-b <OFFSET>` or `--base-addr <OFFSET>`: Set a custom base_addr for the binary
+- `--aflgo-distances`: Use the AFLGo formula to generate the distances (Currently broken ...)
+
+
+This command uses the debug files of the binary together with the selected targets
+in `BBtargets.txt` to generate the distance file for the QEMU fuzzing part (DFFBOT-QEMU).
+The AFLGO-Distance formula is currently broken and will be fixed in a later version.
+
+
 ## Example commands
 
 The commands uses the calculator in `examples/calculator` as base.
@@ -77,7 +156,7 @@ It can be build with `cmake` with included debug flag.
 
 - `python3 -m dffbot convert-aflgo-to-dffbot ./Calculator /tmp/distance.cfg.txt /tmp/dffbot_distances.txt`
 - `python3 -m dffbot convert-dffbot-to-aflgo ./Calculator /tmp/dffbot_distances.txt /tmp/distance.cfg.txt`
-- `python3 -m dffbot generate-distances ./Calculator 0x400c7b 0x400c21 /tmp/dffbot_distances.txt`
+- `python3 -m dffbot generate-distances ./Calculator /tmp/dffbot_distances.txt 0x400c7b 0x400c21`
 - `python3 -m dffbot generate-distances-from-debug ./Calculator /tmp/BBtargets.txt /tmp/dffbot_distances.txt`
 
 
